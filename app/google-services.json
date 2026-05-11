@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "508065273470",
+    "project_id": "kafecraft-1",
+    "storage_bucket": "kafecraft-1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508065273470:android:07ecaadbe8a8a07c322a2f",
+        "android_client_info": {
+          "package_name": "com.kelompoksatu.kafecraft"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqh8vJ4bsVSLnwCcZ8Zag3VlOUF3Tz3ho"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
