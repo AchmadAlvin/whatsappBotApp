@@ -48,8 +48,9 @@ fun ProfileScreen(
         }
         HorizontalDivider(color = Color(0xFFF5E6E0))
         Column(modifier = Modifier.fillMaxWidth().padding(top = 32.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            AsyncImage(model = "https://i.pravatar.cc/300?u=$userHandle", contentDescription = "Profile Picture",
-                contentScale = ContentScale.Crop, modifier = Modifier.size(100.dp).clip(CircleShape).background(Color(0xFFE0E0E0)))
+            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color(0xFFE0D5CB)), contentAlignment = Alignment.Center) {
+                Text(userName.take(1).uppercase(), fontSize = 36.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF7A45))
+            }
             Spacer(Modifier.height(16.dp))
             Text(userName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
             Spacer(Modifier.height(4.dp))
