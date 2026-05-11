@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -22,6 +23,8 @@ import com.kelompoksatu.kafecraft.ui.myrecipes.MyRecipesScreen
 import com.kelompoksatu.kafecraft.ui.myrecipes.MyRecipesViewModel
 import com.kelompoksatu.kafecraft.ui.profile.ProfileScreen
 
+data class BottomNavItem(val title: String, val route: String, val icon: ImageVector)
+
 @Composable
 fun MainScreen(
     sessionManager: SessionManager,
@@ -31,44 +34,16 @@ fun MainScreen(
     onLogout: () -> Unit
 ) {
     val bottomNavController = rememberNavController()
-    
-    Scaffold(
-        bottomBar = { BottomNavigationBar(bottomNavController) }
-    ) { innerPadding ->
-        NavHost(
-            navController = bottomNavController,
-            startDestination = "home_tab",
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable("home_tab") {
-                HomeScreen(
-                    viewModel = homeViewModel,
-                    onNavigateToDetail = { recipeId ->
-                        rootNavController.navigate("recipe_detail/$recipeId")
-                    }
-                )
-            }
+    Scaffold(bottomBar = { BottomNavigationBar(bottomNavController) }) { innerPadding ->
+        NavHost(bottomNavController, startDestination = "home_tab", modifier = Modifier.padding(innerPadding)) {
+            composable("home_tab") { HomeScreen(homeViewModel) { rootNavController.navigate("recipe_detail/$it") } }
             composable("menu_tab") {
-                MyRecipesScreen(
-                    viewModel = myRecipesViewModel,
-                    onNavigateToCreate = {
-                        rootNavController.navigate("create_edit_recipe?recipeId=")
-                    },
-                    onNavigateToEdit = { recipeId ->
-                        rootNavController.navigate("create_edit_recipe?recipeId=$recipeId")
-                    }
-                )
+                MyRecipesScreen(myRecipesViewModel,
+                    onNavigateToCreate = { rootNavController.navigate("create_edit_recipe?recipeId=") },
+                    onNavigateToEdit = { rootNavController.navigate("create_edit_recipe?recipeId=$it") })
             }
             composable("profile_tab") {
-                ProfileScreen(
-                    sessionManager = sessionManager,
-                    homeViewModel = homeViewModel,
-                    myRecipesViewModel = myRecipesViewModel,
-                    onLogout = onLogout,
-                    onNavigateToDetail = { recipeId ->
-                        rootNavController.navigate("recipe_detail/$recipeId")
-                    }
-                )
+                ProfileScreen(sessionManager, homeViewModel, myRecipesViewModel, onLogout) { rootNavController.navigate("recipe_detail/$it") }
             }
         }
     }
@@ -78,42 +53,25 @@ fun MainScreen(
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
         BottomNavItem("Home", "home_tab", Icons.Default.Home),
-        BottomNavItem("Menu", "menu_tab", Icons.Default.AddCircle), // AddCircle to represent the icon in design
+        BottomNavItem("Menu", "menu_tab", Icons.Default.AddCircle),
         BottomNavItem("Profile", "profile_tab", Icons.Default.Person)
     )
-
-    NavigationBar(
-        containerColor = Color.White
-    ) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route
-
+    val currentRoute by navController.currentBackStackEntryAsState()
+    NavigationBar(containerColor = Color.White) {
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(imageVector = item.icon, contentDescription = item.title) },
-                label = { Text(text = item.title) },
-                selected = currentRoute == item.route,
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFFFF7A45),
-                    selectedTextColor = Color(0xFFFF7A45),
-                    indicatorColor = Color(0xFFF5E6E0),
-                    unselectedIconColor = Color.Gray,
-                    unselectedTextColor = Color.Gray
-                ),
+                icon = { Icon(item.icon, contentDescription = item.title) },
+                label = { Text(item.title) },
+                selected = currentRoute?.destination?.route == item.route,
+                colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFFFF7A45), selectedTextColor = Color(0xFFFF7A45),
+                    indicatorColor = Color(0xFFF5E6E0), unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray),
                 onClick = {
                     navController.navigate(item.route) {
-                        navController.graph.startDestinationRoute?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
-                            }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
+                        navController.graph.startDestinationRoute?.let { popUpTo(it) { saveState = true } }
+                        launchSingleTop = true; restoreState = true
                     }
                 }
             )
         }
     }
 }
-
-data class BottomNavItem(val title: String, val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)

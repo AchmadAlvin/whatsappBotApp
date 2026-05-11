@@ -22,100 +22,37 @@ import com.kelompoksatu.kafecraft.ui.myrecipes.MyRecipesViewModel
 fun AppNavigation(sessionManager: SessionManager) {
     val navController = rememberNavController()
     val context = LocalContext.current
-    
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory(sessionManager))
-    
     val bookmarkDao = remember { AppDatabase.getDatabase(context).bookmarkDao() }
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory(bookmarkDao, sessionManager))
     val myRecipesViewModel: MyRecipesViewModel = viewModel(factory = MyRecipesViewModel.Factory(sessionManager))
 
-    val startDestination = if (sessionManager.isLoggedIn()) "home" else "login"
-
-    NavHost(navController = navController, startDestination = startDestination) {
+    NavHost(navController, startDestination = if (sessionManager.isLoggedIn()) "home" else "login") {
         composable("login") {
-            LoginScreen(
-                viewModel = authViewModel,
+            LoginScreen(authViewModel,
                 onNavigateToRegister = { navController.navigate("register") },
-                onNavigateToHome = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                },
-                onNavigateToForgot = { navController.navigate("forgot_password") }
-            )
+                onNavigateToHome = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
+                onNavigateToForgot = { navController.navigate("forgot_password") })
         }
-
-        composable("register") {
-            RegisterScreen(
-                viewModel = authViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
+        composable("register") { RegisterScreen(authViewModel) { navController.popBackStack() } }
         composable("forgot_password") {
-            ForgotPasswordScreen(
-                viewModel = authViewModel,
+            ForgotPasswordScreen(authViewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToChangePassword = {
-                    navController.navigate("change_password") {
-                        popUpTo("forgot_password") { inclusive = true }
-                    }
-                }
-            )
+                onNavigateToChangePassword = { navController.navigate("change_password") { popUpTo("forgot_password") { inclusive = true } } })
         }
-
         composable("change_password") {
-            ChangePasswordScreen(
-                viewModel = authViewModel,
-                onNavigateToLogin = {
-                    navController.navigate("login") {
-                        popUpTo(0) // clear backstack
-                    }
-                }
-            )
+            ChangePasswordScreen(authViewModel) { navController.navigate("login") { popUpTo(0) } }
         }
-
         composable("home") {
-            MainScreen(
-                sessionManager = sessionManager,
-                homeViewModel = homeViewModel,
-                myRecipesViewModel = myRecipesViewModel,
-                rootNavController = navController,
-                onLogout = {
-                    sessionManager.logout()
-                    navController.navigate("login") {
-                        popUpTo(0)
-                    }
-                }
-            )
+            MainScreen(sessionManager, homeViewModel, myRecipesViewModel, navController) {
+                sessionManager.logout(); navController.navigate("login") { popUpTo(0) }
+            }
         }
-
-        composable(
-            route = "recipe_detail/{recipeId}",
-            arguments = listOf(navArgument("recipeId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val recipeId = backStackEntry.arguments?.getString("recipeId") ?: ""
-            RecipeDetailScreen(
-                recipeId = recipeId,
-                viewModel = homeViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
+        composable("recipe_detail/{recipeId}", arguments = listOf(navArgument("recipeId") { type = NavType.StringType })) {
+            RecipeDetailScreen(it.arguments?.getString("recipeId") ?: "", homeViewModel) { navController.popBackStack() }
         }
-
-        composable(
-            route = "create_edit_recipe?recipeId={recipeId}",
-            arguments = listOf(navArgument("recipeId") { 
-                type = NavType.StringType
-                nullable = true
-                defaultValue = null
-            })
-        ) { backStackEntry ->
-            val recipeId = backStackEntry.arguments?.getString("recipeId") ?: ""
-            CreateEditRecipeScreen(
-                recipeId = recipeId,
-                viewModel = myRecipesViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
+        composable("create_edit_recipe?recipeId={recipeId}", arguments = listOf(navArgument("recipeId") { type = NavType.StringType; nullable = true; defaultValue = null })) {
+            CreateEditRecipeScreen(it.arguments?.getString("recipeId") ?: "", myRecipesViewModel) { navController.popBackStack() }
         }
     }
 }
