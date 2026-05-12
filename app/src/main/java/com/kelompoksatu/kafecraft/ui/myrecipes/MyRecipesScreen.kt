@@ -19,11 +19,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.kelompoksatu.kafecraft.data.Recipe
 import com.kelompoksatu.kafecraft.ui.home.RecipeWithId
 
+/**
+ * Stateful wrapper for MyRecipesScreen.
+ * Handles the ViewModel interactions and Dialog state.
+ */
 @Composable
 fun MyRecipesScreen(
     viewModel: MyRecipesViewModel,
@@ -45,50 +51,16 @@ fun MyRecipesScreen(
         }
     }
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToCreate,
-                containerColor = Color(0xFFFF7A45),
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Recipe")
-            }
+    MyRecipesContent(
+        recipes = viewModel.myRecipes,
+        isLoading = viewModel.isLoading,
+        onNavigateToCreate = onNavigateToCreate,
+        onNavigateToEdit = onNavigateToEdit,
+        onDeleteClick = { recipe -> 
+            recipeToDelete = recipe
+            showDeleteDialog = true 
         }
-    ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            Text(
-                "My Recipes",
-                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-            Text(
-                "${viewModel.myRecipes.size} recipes in your collection",
-                fontSize = 14.sp, color = Color.Gray,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-            )
-            when {
-                viewModel.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFFFF7A45))
-                }
-                viewModel.myRecipes.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Anda belum membuat resep.", color = Color.Gray)
-                }
-                else -> LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(viewModel.myRecipes) { recipe ->
-                        MyRecipeCard(
-                            recipeWithId = recipe,
-                            onEdit = { onNavigateToEdit(recipe.id) },
-                            onDelete = { recipeToDelete = recipe; showDeleteDialog = true }
-                        )
-                    }
-                }
-            }
-        }
-    }
+    )
 
     if (showDeleteDialog && recipeToDelete != null) {
         AlertDialog(
@@ -113,6 +85,71 @@ fun MyRecipesScreen(
             },
             containerColor = Color.White
         )
+    }
+}
+
+/**
+ * Stateless UI component for MyRecipesScreen.
+ * Only handles rendering the UI and passing up events.
+ */
+@Composable
+fun MyRecipesContent(
+    recipes: List<RecipeWithId>,
+    isLoading: Boolean,
+    onNavigateToCreate: () -> Unit,
+    onNavigateToEdit: (String) -> Unit,
+    onDeleteClick: (RecipeWithId) -> Unit
+) {
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToCreate,
+                containerColor = Color(0xFFFF7A45),
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Recipe")
+            }
+        }
+    ) { innerPadding ->
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Text(
+                "My Recipes",
+                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            Text(
+                "${recipes.size} recipes in your collection",
+                fontSize = 14.sp, color = Color.Gray,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+            )
+            
+            when {
+                isLoading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFFFF7A45))
+                    }
+                }
+                recipes.isEmpty() -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Anda belum membuat resep.", color = Color.Gray)
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(recipes) { recipe ->
+                            MyRecipeCard(
+                                recipeWithId = recipe,
+                                onEdit = { onNavigateToEdit(recipe.id) },
+                                onDelete = { onDeleteClick(recipe) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -169,5 +206,23 @@ fun MyRecipeCard(recipeWithId: RecipeWithId, onEdit: () -> Unit, onDelete: () ->
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MyRecipesContentPreview() {
+    val dummyRecipes = listOf(
+        RecipeWithId("1", Recipe("authorId", "Author Name", "Nasi Goreng", "Nasi goreng spesial pakai telur", "", 0L)),
+        RecipeWithId("2", Recipe("authorId", "Author Name", "Ayam Bakar", "Ayam bakar madu manis", "", 0L))
+    )
+    MaterialTheme {
+        MyRecipesContent(
+            recipes = dummyRecipes,
+            isLoading = false,
+            onNavigateToCreate = {},
+            onNavigateToEdit = {},
+            onDeleteClick = {}
+        )
     }
 }

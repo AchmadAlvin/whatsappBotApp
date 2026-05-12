@@ -19,40 +19,90 @@ import com.kelompoksatu.kafecraft.ui.main.MainScreen
 import com.kelompoksatu.kafecraft.ui.myrecipes.CreateEditRecipeScreen
 import com.kelompoksatu.kafecraft.ui.myrecipes.MyRecipesViewModel
 
+/**
+ * Main Navigation component for the application.
+ * This is where all the ViewModels are instantiated and screens are connected.
+ */
 @Composable
 fun AppNavigation(sessionManager: SessionManager) {
     val navController = rememberNavController()
     val context = LocalContext.current
+
+    // Initialize all shared ViewModels
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory(sessionManager))
     val bookmarkDao = remember { AppDatabase.getDatabase(context).bookmarkDao() }
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory(bookmarkDao, sessionManager))
     val myRecipesViewModel: MyRecipesViewModel = viewModel(factory = MyRecipesViewModel.Factory(sessionManager))
 
+    // Check if user is already logged in to determine start screen
     val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
 
-    NavHost(navController, startDestination = if (isLoggedIn) "home" else "login") {
+    NavHost(
+        navController = navController, 
+        startDestination = if (isLoggedIn) "home" else "login"
+    ) {
+        
+        // --- AUTHENTICATION FLOW ---
+        
         composable("login") {
-            LoginScreen(authViewModel,
+            LoginScreen(
+                viewModel = authViewModel,
                 onNavigateToRegister = { navController.navigate("register") },
                 onNavigateToHome = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
-                onNavigateToForgot = { navController.navigate("forgot_password") })
+                onNavigateToForgot = { navController.navigate("forgot_password") }
+            )
         }
-        composable("register") { RegisterScreen(authViewModel) { navController.popBackStack() } }
+        
+        composable("register") { 
+            RegisterScreen(viewModel = authViewModel) { 
+                navController.popBackStack() 
+            } 
+        }
+        
         composable("forgot_password") {
-            ForgotPasswordScreen(authViewModel, onNavigateBack = { navController.popBackStack() })
+            ForgotPasswordScreen(viewModel = authViewModel) { 
+                navController.popBackStack() 
+            }
         }
+        
+        // --- MAIN APPLICATION FLOW ---
+        
         composable("home") {
-            MainScreen(sessionManager, homeViewModel, myRecipesViewModel, navController) {
+            MainScreen(
+                sessionManager = sessionManager, 
+                homeViewModel = homeViewModel, 
+                myRecipesViewModel = myRecipesViewModel, 
+                rootNavController = navController
+            ) {
+                // Logout Logic
                 FirebaseAuth.getInstance().signOut()
                 sessionManager.logout()
                 navController.navigate("login") { popUpTo(0) }
             }
         }
-        composable("recipe_detail/{recipeId}", arguments = listOf(navArgument("recipeId") { type = NavType.StringType })) {
-            RecipeDetailScreen(it.arguments?.getString("recipeId") ?: "", homeViewModel) { navController.popBackStack() }
+        
+        composable(
+            route = "recipe_detail/{recipeId}", 
+            arguments = listOf(navArgument("recipeId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val recipeId = backStackEntry.arguments?.getString("recipeId") ?: ""
+            RecipeDetailScreen(recipeId = recipeId, viewModel = homeViewModel) { 
+                navController.popBackStack() 
+            }
         }
-        composable("create_edit_recipe?recipeId={recipeId}", arguments = listOf(navArgument("recipeId") { type = NavType.StringType; nullable = true; defaultValue = null })) {
-            CreateEditRecipeScreen(it.arguments?.getString("recipeId") ?: "", myRecipesViewModel) { navController.popBackStack() }
+        
+        composable(
+            route = "create_edit_recipe?recipeId={recipeId}", 
+            arguments = listOf(navArgument("recipeId") { 
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null 
+            })
+        ) { backStackEntry ->
+            val recipeId = backStackEntry.arguments?.getString("recipeId") ?: ""
+            CreateEditRecipeScreen(recipeId = recipeId, viewModel = myRecipesViewModel) { 
+                navController.popBackStack() 
+            }
         }
     }
 }
