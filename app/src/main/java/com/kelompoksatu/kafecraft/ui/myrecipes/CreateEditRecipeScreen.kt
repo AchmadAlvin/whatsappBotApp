@@ -30,7 +30,11 @@ import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateEditRecipeScreen(recipeId: String, viewModel: MyRecipesViewModel, onNavigateBack: () -> Unit) {
+fun CreateEditRecipeScreen(
+    recipeId: String,
+    viewModel: MyRecipesViewModel,
+    onNavigateBack: () -> Unit
+) {
     val context = LocalContext.current
     val isEditMode = recipeId.isNotEmpty()
     val existingRecipe = if (isEditMode) viewModel.myRecipes.find { it.id == recipeId } else null
@@ -40,7 +44,9 @@ fun CreateEditRecipeScreen(recipeId: String, viewModel: MyRecipesViewModel, onNa
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { selectedImageUri = it }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
+        selectedImageUri = it
+    }
 
     LaunchedEffect(viewModel.saveMessage) {
         viewModel.saveMessage?.let {
@@ -50,72 +56,143 @@ fun CreateEditRecipeScreen(recipeId: String, viewModel: MyRecipesViewModel, onNa
         }
     }
 
-    val fieldColors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFFF7A45), unfocusedBorderColor = Color(0xFFE0E0E0),
-        focusedContainerColor = Color.White, unfocusedContainerColor = Color.White)
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = Color(0xFFFF7A45),
+        unfocusedBorderColor = Color(0xFFE0E0E0),
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White
+    )
 
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Icon(Icons.Default.ArrowBack, contentDescription = "Back", modifier = Modifier.size(24.dp).clickable { onNavigateBack() })
-            Text(if (isEditMode) "Edit Resep" else "Buat Resep", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
-            if (isEditMode) Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = Color(0xFFD32F2F), modifier = Modifier.size(24.dp).clickable { showDeleteDialog = true })
-            else Spacer(Modifier.size(24.dp))
+            Text(
+                if (isEditMode) "Edit Resep" else "Buat Resep",
+                fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211)
+            )
+            if (isEditMode) {
+                Icon(
+                    Icons.Outlined.Delete,
+                    contentDescription = "Delete",
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(24.dp).clickable { showDeleteDialog = true }
+                )
+            } else {
+                Spacer(Modifier.size(24.dp))
+            }
         }
         Spacer(Modifier.height(24.dp))
-        Box(modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFEFEBE9))
-            .clickable { imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-            contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxWidth().height(200.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFFEFEBE9))
+                .clickable { imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            contentAlignment = Alignment.Center
+        ) {
             when {
-                selectedImageUri != null -> AsyncImage(model = selectedImageUri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                isEditMode && existingRecipe?.recipe?.imageUrl?.isNotEmpty() == true ->
+                selectedImageUri != null -> {
+                    AsyncImage(model = selectedImageUri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                }
+                isEditMode && existingRecipe?.recipe?.imageUrl?.isNotEmpty() == true -> {
                     AsyncImage(model = existingRecipe.recipe.imageUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Outlined.Upload, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color(0xFF8D6E63))
-                    Spacer(Modifier.height(8.dp))
-                    Text("Ubah Foto Resep", color = Color(0xFF8D6E63))
+                }
+                else -> {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Outlined.Upload, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color(0xFF8D6E63))
+                        Spacer(Modifier.height(8.dp))
+                        Text("Ubah Foto Resep", color = Color(0xFF8D6E63))
+                    }
                 }
             }
         }
         Spacer(Modifier.height(24.dp))
         Text("Nama Resep", fontWeight = FontWeight.Bold, color = Color(0xFF332211))
         Spacer(Modifier.height(8.dp))
-        OutlinedTextField(value = title, onValueChange = { title = it }, placeholder = { Text("Nasi Goreng Spesial") }, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            placeholder = { Text("Nasi Goreng Spesial") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = fieldColors
+        )
         Spacer(Modifier.height(16.dp))
         Text("Deskripsi", fontWeight = FontWeight.Bold, color = Color(0xFF332211))
         Spacer(Modifier.height(8.dp))
-        OutlinedTextField(value = description, onValueChange = { description = it }, placeholder = { Text("Ceritakan tentang resep ini...") },
-            modifier = Modifier.fillMaxWidth().height(150.dp), colors = fieldColors)
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            placeholder = { Text("Ceritakan tentang resep ini...") },
+            modifier = Modifier.fillMaxWidth().height(150.dp),
+            colors = fieldColors
+        )
         Spacer(Modifier.height(32.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Button(onClick = onNavigateBack, modifier = Modifier.weight(1f).height(50.dp), shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFEBE9))) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Button(
+                onClick = onNavigateBack,
+                modifier = Modifier.weight(1f).height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFEBE9))
+            ) {
                 Text("Batal", color = Color(0xFF332211), fontWeight = FontWeight.Bold)
             }
             Button(
                 onClick = {
-                    when {
-                        title.isBlank() || description.isBlank() -> Toast.makeText(context, "Harap isi nama dan deskripsi resep", Toast.LENGTH_SHORT).show()
-                        !isEditMode && selectedImageUri == null -> Toast.makeText(context, "Harap pilih foto resep", Toast.LENGTH_SHORT).show()
-                        else -> viewModel.saveRecipe(selectedImageUri, title, description, if (isEditMode) recipeId else null, existingRecipe?.recipe?.imageUrl)
+                    if (title.isBlank() || description.isBlank()) {
+                        Toast.makeText(context, "Harap isi nama dan deskripsi resep", Toast.LENGTH_SHORT).show()
+                    } else if (!isEditMode && selectedImageUri == null) {
+                        Toast.makeText(context, "Harap pilih foto resep", Toast.LENGTH_SHORT).show()
+                    } else {
+                        viewModel.saveRecipe(
+                            selectedImageUri, title, description,
+                            if (isEditMode) recipeId else null,
+                            existingRecipe?.recipe?.imageUrl
+                        )
                     }
                 },
-                modifier = Modifier.weight(1f).height(50.dp), shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7A45)), enabled = !viewModel.isSaving
+                modifier = Modifier.weight(1f).height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7A45)),
+                enabled = !viewModel.isSaving
             ) {
-                if (viewModel.isSaving) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                else Text("Simpan Perubahan", fontWeight = FontWeight.Bold)
+                if (viewModel.isSaving) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Simpan Perubahan", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
 
     if (showDeleteDialog && existingRecipe != null) {
-        AlertDialog(onDismissRequest = { showDeleteDialog = false },
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
             title = { Text("Hapus Resep?", fontWeight = FontWeight.Bold) },
             text = { Text("Resep ini akan dihapus permanen dan tidak bisa dikembalikan.") },
             confirmButton = {
-                Button(onClick = { viewModel.deleteRecipe(recipeId, existingRecipe.recipe.imageUrl); showDeleteDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))) { Text("Hapus") }
+                Button(
+                    onClick = {
+                        viewModel.deleteRecipe(recipeId, existingRecipe.recipe.imageUrl)
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                ) {
+                    Text("Hapus")
+                }
             },
-            dismissButton = { OutlinedButton(onClick = { showDeleteDialog = false }) { Text("Batal", color = Color(0xFF332211)) } },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteDialog = false }) {
+                    Text("Batal", color = Color(0xFF332211))
+                }
+            },
             containerColor = Color.White
         )
     }

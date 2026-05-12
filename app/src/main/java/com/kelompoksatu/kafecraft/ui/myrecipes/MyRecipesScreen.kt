@@ -35,23 +35,51 @@ fun MyRecipesScreen(
     var recipeToDelete by remember { mutableStateOf<RecipeWithId?>(null) }
 
     LaunchedEffect(viewModel.saveMessage) {
-        viewModel.saveMessage?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show(); viewModel.resetMessage() }
+        viewModel.saveMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.resetMessage()
+        }
     }
 
-    Scaffold(floatingActionButton = {
-        FloatingActionButton(onClick = onNavigateToCreate, containerColor = Color(0xFFFF7A45), contentColor = Color.White) {
-            Icon(Icons.Default.Add, contentDescription = "Add Recipe")
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToCreate,
+                containerColor = Color(0xFFFF7A45),
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Recipe")
+            }
         }
-    }) { innerPadding ->
+    ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            Text("My Recipes", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211), modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-            Text("${viewModel.myRecipes.size} recipes in your collection", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp))
+            Text(
+                "My Recipes",
+                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            Text(
+                "${viewModel.myRecipes.size} recipes in your collection",
+                fontSize = 14.sp, color = Color.Gray,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+            )
             when {
-                viewModel.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFFFF7A45)) }
-                viewModel.myRecipes.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Anda belum membuat resep.", color = Color.Gray) }
-                else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items(viewModel.myRecipes) { r ->
-                        MyRecipeCard(r, onEdit = { onNavigateToEdit(r.id) }, onDelete = { recipeToDelete = r; showDeleteDialog = true })
+                viewModel.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFFFF7A45))
+                }
+                viewModel.myRecipes.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Anda belum membuat resep.", color = Color.Gray)
+                }
+                else -> LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(viewModel.myRecipes) { recipe ->
+                        MyRecipeCard(
+                            recipeWithId = recipe,
+                            onEdit = { onNavigateToEdit(recipe.id) },
+                            onDelete = { recipeToDelete = recipe; showDeleteDialog = true }
+                        )
                     }
                 }
             }
@@ -64,10 +92,21 @@ fun MyRecipesScreen(
             title = { Text("Delete Recipe?", fontWeight = FontWeight.Bold) },
             text = { Text("This action cannot be undone. Are you sure you want to delete this recipe?") },
             confirmButton = {
-                Button(onClick = { viewModel.deleteRecipe(recipeToDelete!!.id, recipeToDelete!!.recipe.imageUrl); showDeleteDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))) { Text("Delete") }
+                Button(
+                    onClick = {
+                        viewModel.deleteRecipe(recipeToDelete!!.id, recipeToDelete!!.recipe.imageUrl)
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                ) {
+                    Text("Delete")
+                }
             },
-            dismissButton = { OutlinedButton(onClick = { showDeleteDialog = false }) { Text("Cancel", color = Color(0xFF332211)) } },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel", color = Color(0xFF332211))
+                }
+            },
             containerColor = Color.White
         )
     }
@@ -75,24 +114,46 @@ fun MyRecipesScreen(
 
 @Composable
 fun MyRecipeCard(recipeWithId: RecipeWithId, onEdit: () -> Unit, onDelete: () -> Unit) {
-    val r = recipeWithId.recipe
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
+    val recipe = recipeWithId.recipe
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
         Column {
-            AsyncImage(model = r.imageUrl.ifEmpty { "https://picsum.photos/400/200" }, contentDescription = r.title,
-                contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)))
+            AsyncImage(
+                model = recipe.imageUrl.ifEmpty { "https://picsum.photos/400/200" },
+                contentDescription = recipe.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().height(200.dp)
+                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+            )
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(r.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
+                Text(recipe.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
                 Spacer(Modifier.height(8.dp))
-                Text(r.description, fontSize = 14.sp, color = Color.DarkGray, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(recipe.description, fontSize = 14.sp, color = Color.DarkGray, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Button(onClick = onEdit, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFF3E0)), shape = RoundedCornerShape(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Button(
+                        onClick = onEdit,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFF3E0)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
                         Icon(Icons.Outlined.Edit, contentDescription = null, tint = Color(0xFF332211), modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Edit", color = Color(0xFF332211))
                     }
-                    Button(onClick = onDelete, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEBEE)), shape = RoundedCornerShape(8.dp)) {
+                    Button(
+                        onClick = onDelete,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEBEE)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
                         Icon(Icons.Outlined.Delete, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Delete", color = Color(0xFFD32F2F))

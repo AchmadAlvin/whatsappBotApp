@@ -1,5 +1,8 @@
 package com.kelompoksatu.kafecraft.ui.profile
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,9 +24,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.storage.FirebaseStorage
 import com.kelompoksatu.kafecraft.data.SessionManager
 import com.kelompoksatu.kafecraft.ui.home.HomeViewModel
 import com.kelompoksatu.kafecraft.ui.myrecipes.MyRecipesViewModel
+import java.util.UUID
 
 @Composable
 fun ProfileScreen(
@@ -36,6 +43,35 @@ fun ProfileScreen(
     val bookmarks by homeViewModel.bookmarks.collectAsState()
     val userName = sessionManager.getUserName() ?: "User"
     val userHandle = "@${userName.lowercase().replace(" ", "")}"
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+
+    var photoUrl by remember { mutableStateOf<String?>(null) }
+    var isUploadingPhoto by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uid) {
+        if (uid != null) {
+            FirebaseDatabase.getInstance().getReference("users").child(uid).child("photoUrl").get()
+                .addOnSuccessListener { snap ->
+                    photoUrl = snap.getValue(String::class.java)
+                }
+        }
+    }
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null && uid != null) {
+            isUploadingPhoto = true
+            val ref = FirebaseStorage.getInstance().reference.child("profile_images/${uid}.jpg")
+            ref.putFile(uri)
+                .addOnSuccessListener {
+                    ref.downloadUrl.addOnSuccessListener { url ->
+                        photoUrl = url.toString()
+                        FirebaseDatabase.getInstance().getReference("users").child(uid).child("photoUrl").setValue(url.toString())
+                        isUploadingPhoto = false
+                    }
+                }
+                .addOnFailureListener { isUploadingPhoto = false }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFFEF9F6))) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -48,10 +84,38 @@ fun ProfileScreen(
         }
         HorizontalDivider(color = Color(0xFFF5E6E0))
         Column(modifier = Modifier.fillMaxWidth().padding(top = 32.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color(0xFFE0D5CB)), contentAlignment = Alignment.Center) {
-                Text(userName.take(1).uppercase(), fontSize = 36.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF7A45))
+            Box(contentAlignment = Alignment.BottomEnd) {
+                Box(
+                    modifier = Modifier.size(100.dp).clip(CircleShape).clickable { imagePicker.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (photoUrl != null) {
+                        AsyncImage(
+                            model = photoUrl,
+                            contentDescription = "Foto Profil",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize().clip(CircleShape)
+                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE0D5CB)), contentAlignment = Alignment.Center) {
+                            Text(userName.take(1).uppercase(), fontSize = 36.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF7A45))
+                        }
+                    }
+                }
+                Box(
+                    modifier = Modifier.size(28.dp).clip(CircleShape).background(Color(0xFFFF7A45)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("✏️", fontSize = 12.sp)
+                }
             }
-            Spacer(Modifier.height(16.dp))
+            if (isUploadingPhoto) {
+                Spacer(Modifier.height(8.dp))
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color(0xFFFF7A45), strokeWidth = 2.dp)
+            }
+            Spacer(Modifier.height(8.dp))
+            Text("Ganti Foto", fontSize = 12.sp, color = Color(0xFFFF7A45), modifier = Modifier.clickable { imagePicker.launch("image/*") })
+            Spacer(Modifier.height(8.dp))
             Text(userName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
             Spacer(Modifier.height(4.dp))
             Text(userHandle, fontSize = 14.sp, color = Color(0xFFFF7A45))
