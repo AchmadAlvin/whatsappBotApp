@@ -21,17 +21,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
+import com.kelompoksatu.kafecraft.data.BookmarkEntity
 import com.kelompoksatu.kafecraft.data.SessionManager
 import com.kelompoksatu.kafecraft.ui.home.HomeViewModel
 import com.kelompoksatu.kafecraft.ui.myrecipes.MyRecipesViewModel
-import java.util.UUID
 
+/**
+ * Stateful wrapper for the Profile Screen.
+ * Handles ViewModels, Firebase interactions, and SessionManager.
+ */
 @Composable
 fun ProfileScreen(
     sessionManager: SessionManager,
@@ -48,6 +53,7 @@ fun ProfileScreen(
     var photoUrl by remember { mutableStateOf<String?>(null) }
     var isUploadingPhoto by remember { mutableStateOf(false) }
 
+    // Fetch user profile photo URL
     LaunchedEffect(uid) {
         if (uid != null) {
             FirebaseDatabase.getInstance().getReference("users").child(uid).child("photoUrl").get()
@@ -57,6 +63,7 @@ fun ProfileScreen(
         }
     }
 
+    // Handle photo picking and uploading
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null && uid != null) {
             isUploadingPhoto = true
@@ -73,20 +80,59 @@ fun ProfileScreen(
         }
     }
 
+    ProfileContent(
+        userName = userName,
+        userHandle = userHandle,
+        photoUrl = photoUrl,
+        isUploadingPhoto = isUploadingPhoto,
+        postCount = myRecipesViewModel.myRecipes.size,
+        bookmarks = bookmarks,
+        onPhotoChangeClick = { imagePicker.launch("image/*") },
+        onLogoutClick = onLogout,
+        onNavigateToDetail = onNavigateToDetail
+    )
+}
+
+/**
+ * Stateless UI component for the Profile Screen.
+ * Accepts only primitive values and lambdas.
+ */
+@Composable
+fun ProfileContent(
+    userName: String,
+    userHandle: String,
+    photoUrl: String?,
+    isUploadingPhoto: Boolean,
+    postCount: Int,
+    bookmarks: List<BookmarkEntity>,
+    onPhotoChangeClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onNavigateToDetail: (String) -> Unit
+) {
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFFEF9F6))) {
-        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        // Top Bar
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text("Profile", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onLogout() }) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onLogoutClick() }) {
                 Icon(Icons.Outlined.ExitToApp, contentDescription = "Logout", tint = Color(0xFFD32F2F), modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(4.dp))
                 Text("Keluar", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
         }
         HorizontalDivider(color = Color(0xFFF5E6E0))
-        Column(modifier = Modifier.fillMaxWidth().padding(top = 32.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+
+        // Profile Info Section
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(top = 32.dp, bottom = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Box(contentAlignment = Alignment.BottomEnd) {
                 Box(
-                    modifier = Modifier.size(100.dp).clip(CircleShape).clickable { imagePicker.launch("image/*") },
+                    modifier = Modifier.size(100.dp).clip(CircleShape).clickable { onPhotoChangeClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     if (photoUrl != null) {
@@ -114,17 +160,19 @@ fun ProfileScreen(
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color(0xFFFF7A45), strokeWidth = 2.dp)
             }
             Spacer(Modifier.height(8.dp))
-            Text("Ganti Foto", fontSize = 12.sp, color = Color(0xFFFF7A45), modifier = Modifier.clickable { imagePicker.launch("image/*") })
+            Text("Ganti Foto", fontSize = 12.sp, color = Color(0xFFFF7A45), modifier = Modifier.clickable { onPhotoChangeClick() })
             Spacer(Modifier.height(8.dp))
             Text(userName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
             Spacer(Modifier.height(4.dp))
             Text(userHandle, fontSize = 14.sp, color = Color(0xFFFF7A45))
             Spacer(Modifier.height(24.dp))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(myRecipesViewModel.myRecipes.size.toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
+                Text(postCount.toString(), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
                 Text("Posts", fontSize = 14.sp, color = Color.Gray)
             }
         }
+
+        // Bookmark Header
         Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
             HorizontalDivider(color = Color(0xFFF5E6E0))
             Box(modifier = Modifier.background(Color(0xFFFEF9F6)).padding(horizontal = 16.dp)) {
@@ -132,6 +180,8 @@ fun ProfileScreen(
             }
         }
         HorizontalDivider(color = Color(0xFFFF7A45), modifier = Modifier.padding(bottom = 16.dp))
+
+        // Bookmarks List
         if (bookmarks.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 Text("Belum ada resep yang dibookmark.", color = Color.Gray, modifier = Modifier.padding(top = 32.dp))
@@ -152,9 +202,7 @@ fun ProfileScreen(
                         elevation = CardDefaults.cardElevation(1.dp)
                     ) {
                         Row(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -174,5 +222,27 @@ fun ProfileScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ProfileContentPreview() {
+    val dummyBookmarks = listOf(
+        BookmarkEntity("1", "Nasi Goreng Spesial", "Enak banget", "", "Chef A"),
+        BookmarkEntity("2", "Ayam Bakar Madu", "Mantap", "", "Chef B")
+    )
+    MaterialTheme {
+        ProfileContent(
+            userName = "Budi Santoso",
+            userHandle = "@budisantoso",
+            photoUrl = null,
+            isUploadingPhoto = false,
+            postCount = 5,
+            bookmarks = dummyBookmarks,
+            onPhotoChangeClick = {},
+            onLogoutClick = {},
+            onNavigateToDetail = {}
+        )
     }
 }
