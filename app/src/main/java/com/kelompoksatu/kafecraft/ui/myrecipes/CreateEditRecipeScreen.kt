@@ -148,8 +148,6 @@ fun CreateEditRecipeScreen(
                 onClick = {
                     if (title.isBlank() || description.isBlank()) {
                         Toast.makeText(context, "Harap isi nama dan deskripsi resep", Toast.LENGTH_SHORT).show()
-                    } else if (!isEditMode && selectedImageUri == null) {
-                        Toast.makeText(context, "Harap pilih foto resep", Toast.LENGTH_SHORT).show()
                     } else {
                         viewModel.saveRecipe(
                             selectedImageUri, title, description,
