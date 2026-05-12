@@ -34,6 +34,10 @@ fun MyRecipesScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var recipeToDelete by remember { mutableStateOf<RecipeWithId?>(null) }
 
+    LaunchedEffect(Unit) {
+        viewModel.fetchMyRecipes()
+    }
+
     LaunchedEffect(viewModel.saveMessage) {
         viewModel.saveMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()

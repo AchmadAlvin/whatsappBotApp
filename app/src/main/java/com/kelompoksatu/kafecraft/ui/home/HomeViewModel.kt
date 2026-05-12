@@ -81,6 +81,12 @@ class HomeViewModel(
         }
     }
 
+    fun removeBookmark(entity: BookmarkEntity) {
+        viewModelScope.launch {
+            bookmarkDao.delete(entity)
+        }
+    }
+
     class Factory(
         private val bookmarkDao: BookmarkDao,
         private val sessionManager: SessionManager

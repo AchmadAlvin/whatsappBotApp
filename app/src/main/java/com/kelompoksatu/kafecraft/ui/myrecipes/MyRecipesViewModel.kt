@@ -20,6 +20,8 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
 
     private val recipesRef = FirebaseDatabase.getInstance().getReference("recipes")
     private val storageRef = FirebaseStorage.getInstance().reference
+    private var recipesListener: ValueEventListener? = null
+    private var lastQueryUid: String? = null
 
     var myRecipes by mutableStateOf<List<RecipeWithId>>(emptyList())
     var isLoading by mutableStateOf(true)
@@ -28,14 +30,20 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
 
     init { fetchMyRecipes() }
 
-    private fun fetchMyRecipes() {
+    fun fetchMyRecipes() {
         val uid = sessionManager.getUserId()
         if (uid == null) {
             isLoading = false
             return
         }
+        
+        if (uid == lastQueryUid && recipesListener != null) return
+        
+        recipesListener?.let { recipesRef.removeEventListener(it) }
+        lastQueryUid = uid
+
         isLoading = true
-        recipesRef.orderByChild("authorId").equalTo(uid).addValueEventListener(object : ValueEventListener {
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 myRecipes = snapshot.children.mapNotNull { child ->
                     val recipe = child.getValue(Recipe::class.java)
@@ -47,7 +55,14 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
             override fun onCancelled(error: DatabaseError) {
                 isLoading = false
             }
-        })
+        }
+        recipesListener = listener
+        recipesRef.orderByChild("authorId").equalTo(uid).addValueEventListener(listener)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        recipesListener?.let { recipesRef.removeEventListener(it) }
     }
 
     fun saveRecipe(

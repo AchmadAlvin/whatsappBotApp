@@ -38,12 +38,30 @@ fun RecipeDetailScreen(
 
     LaunchedEffect(recipeId) { viewModel.fetchComments(recipeId) }
 
+    val isBookmarked = bookmarkList.any { it.recipeId == recipeId }
+    val bookmarkedEntity = bookmarkList.find { it.recipeId == recipeId }
+
     if (recipeWithId == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxSize().background(Color(0xFFFEF9F6)), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Resep tidak ditemukan", color = Color.Gray)
-                Button(onClick = onNavigateBack, modifier = Modifier.padding(top = 16.dp)) {
-                    Text("Kembali")
+                Text("Resep tidak ditemukan", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
+                if (isBookmarked && bookmarkedEntity != null) {
+                    Button(
+                        onClick = { viewModel.removeBookmark(bookmarkedEntity) },
+                        modifier = Modifier.padding(top = 16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEBEE)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Hapus dari Bookmark", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
+                    }
+                }
+                Button(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.padding(top = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7A45)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Kembali", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -51,7 +69,6 @@ fun RecipeDetailScreen(
     }
 
     val recipe = recipeWithId.recipe
-    val isBookmarked = bookmarkList.any { it.recipeId == recipeId }
 
     Scaffold(
         bottomBar = {
