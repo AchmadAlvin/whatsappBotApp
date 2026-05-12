@@ -41,8 +41,17 @@ fun RecipeCard(recipeWithId: RecipeWithId, onClick: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
         Column {
-            AsyncImage(model = r.imageUrl.ifEmpty { "https://picsum.photos/400/200" }, contentDescription = r.title,
-                contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)))
+            if (r.imageUrl.isNotEmpty()) {
+                AsyncImage(
+                    model = r.imageUrl,
+                    contentDescription = r.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                )
+            }
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(r.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
                 Text("by ${r.authorName}", fontSize = 12.sp, color = Color.Gray)

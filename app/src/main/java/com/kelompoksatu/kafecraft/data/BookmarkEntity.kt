@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "bookmarks")
 
-data class BookmarkEntity
+data class BookmarkEntity(
     @PrimaryKey val recipeId: String,
     val title: String,
     val description: String,

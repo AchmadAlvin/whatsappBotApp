@@ -69,13 +69,15 @@ fun RecipeDetailScreen(
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             item {
-                Box {
-                    AsyncImage(
-                        model = recipe.imageUrl.ifEmpty { "https://picsum.photos/400/300" },
-                        contentDescription = recipe.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth().height(300.dp)
-                    )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    if (recipe.imageUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model = recipe.imageUrl,
+                            contentDescription = recipe.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxWidth().height(300.dp)
+                        )
+                    }
                     Box(
                         modifier = Modifier.padding(16.dp).size(40.dp)
                             .background(Color.White.copy(alpha = 0.8f), CircleShape)

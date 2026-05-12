@@ -140,8 +140,17 @@ fun ProfileScreen(
             LazyVerticalGrid(columns = GridCells.Fixed(3), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
                 items(bookmarks) { bookmark ->
-                    AsyncImage(model = bookmark.imageUrl.ifEmpty { "https://picsum.photos/200/200" }, contentDescription = bookmark.title,
-                        contentScale = ContentScale.Crop, modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp)).clickable { onNavigateToDetail(bookmark.recipeId) })
+                    if (bookmark.imageUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model = bookmark.imageUrl,
+                            contentDescription = bookmark.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onNavigateToDetail(bookmark.recipeId) }
+                        )
+                    }
                 }
             }
         }
