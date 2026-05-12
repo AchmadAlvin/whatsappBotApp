@@ -43,13 +43,15 @@ class HomeViewModel(
         recipesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 recipes = snapshot.children.mapNotNull { child ->
-                    val r = child.getValue(Recipe::class.java)
-                    val k = child.key
-                    if (r != null && k != null) RecipeWithId(k, r) else null
+                    val recipe = child.getValue(Recipe::class.java)
+                    val key = child.key
+                    if (recipe != null && key != null) RecipeWithId(key, recipe) else null
                 }.reversed()
                 isLoading = false
             }
-            override fun onCancelled(error: DatabaseError) { isLoading = false }
+            override fun onCancelled(error: DatabaseError) {
+                isLoading = false
+            }
         })
     }
 
@@ -70,12 +72,25 @@ class HomeViewModel(
     fun toggleBookmark(recipeId: String, recipe: Recipe) {
         viewModelScope.launch {
             val entity = BookmarkEntity(recipeId, recipe.title, recipe.description, recipe.imageUrl, recipe.authorName)
-            if (bookmarks.value.any { it.recipeId == recipeId }) bookmarkDao.delete(entity)
-            else bookmarkDao.insert(entity)
+            val isAlreadyBookmarked = bookmarks.value.any { it.recipeId == recipeId }
+            if (isAlreadyBookmarked) {
+                bookmarkDao.delete(entity)
+            } else {
+                bookmarkDao.insert(entity)
+            }
         }
     }
 
-    class Factory(private val bookmarkDao: BookmarkDao, private val sessionManager: SessionManager) : ViewModelProvider.Factory {
+    fun removeBookmark(entity: BookmarkEntity) {
+        viewModelScope.launch {
+            bookmarkDao.delete(entity)
+        }
+    }
+
+    class Factory(
+        private val bookmarkDao: BookmarkDao,
+        private val sessionManager: SessionManager
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>) = HomeViewModel(bookmarkDao, sessionManager) as T
     }

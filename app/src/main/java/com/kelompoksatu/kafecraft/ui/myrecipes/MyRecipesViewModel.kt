@@ -20,6 +20,8 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
 
     private val recipesRef = FirebaseDatabase.getInstance().getReference("recipes")
     private val storageRef = FirebaseStorage.getInstance().reference
+    private var recipesListener: ValueEventListener? = null
+    private var lastQueryUid: String? = null
 
     var myRecipes by mutableStateOf<List<RecipeWithId>>(emptyList())
     var isLoading by mutableStateOf(true)
@@ -28,58 +30,119 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
 
     init { fetchMyRecipes() }
 
-    private fun fetchMyRecipes() {
-        val uid = sessionManager.getUserId() ?: run { isLoading = false; return }
+    fun fetchMyRecipes() {
+        val uid = sessionManager.getUserId()
+        if (uid == null) {
+            isLoading = false
+            return
+        }
+        
+        if (uid == lastQueryUid && recipesListener != null) return
+        
+        recipesListener?.let { recipesRef.removeEventListener(it) }
+        lastQueryUid = uid
+
         isLoading = true
-        recipesRef.orderByChild("authorId").equalTo(uid).addValueEventListener(object : ValueEventListener {
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 myRecipes = snapshot.children.mapNotNull { child ->
-                    val r = child.getValue(Recipe::class.java)
-                    val k = child.key
-                    if (r != null && k != null) RecipeWithId(k, r) else null
+                    val recipe = child.getValue(Recipe::class.java)
+                    val key = child.key
+                    if (recipe != null && key != null) RecipeWithId(key, recipe) else null
                 }.reversed()
                 isLoading = false
             }
-            override fun onCancelled(error: DatabaseError) { isLoading = false }
-        })
+            override fun onCancelled(error: DatabaseError) {
+                isLoading = false
+            }
+        }
+        recipesListener = listener
+        recipesRef.orderByChild("authorId").equalTo(uid).addValueEventListener(listener)
     }
 
-    fun saveRecipe(uri: Uri?, title: String, description: String, existingRecipeId: String? = null, existingImageUrl: String? = null) {
-        val uid = sessionManager.getUserId() ?: run { saveMessage = "User tidak ditemukan, harap login ulang."; return }
-        val uName = sessionManager.getUserName() ?: run { saveMessage = "User tidak ditemukan, harap login ulang."; return }
+    override fun onCleared() {
+        super.onCleared()
+        recipesListener?.let { recipesRef.removeEventListener(it) }
+    }
+
+    fun saveRecipe(
+        uri: Uri?,
+        title: String,
+        description: String,
+        existingRecipeId: String? = null,
+        existingImageUrl: String? = null
+    ) {
+        val uid = sessionManager.getUserId()
+        val userName = sessionManager.getUserName()
+        if (uid == null || userName == null) {
+            saveMessage = "User tidak ditemukan, harap login ulang."
+            return
+        }
         isSaving = true
         if (uri != null) {
             val imageRef = storageRef.child("recipe_images/${UUID.randomUUID()}.jpg")
             imageRef.putFile(uri)
                 .addOnSuccessListener {
-                    imageRef.downloadUrl.addOnSuccessListener { url ->
-                        saveToDb(uid, uName, title, description, url.toString(), existingRecipeId)
-                        if (!existingImageUrl.isNullOrEmpty() && existingRecipeId != null) deleteImage(existingImageUrl)
-                    }.addOnFailureListener { isSaving = false; saveMessage = "Gagal mendapatkan URL gambar." }
+                    imageRef.downloadUrl
+                        .addOnSuccessListener { url ->
+                            saveToDb(uid, userName, title, description, url.toString(), existingRecipeId)
+                            if (!existingImageUrl.isNullOrEmpty() && existingRecipeId != null) {
+                                deleteImage(existingImageUrl)
+                            }
+                        }
+                        .addOnFailureListener {
+                            isSaving = false
+                            saveMessage = "Gagal mendapatkan URL gambar."
+                        }
                 }
-                .addOnFailureListener { isSaving = false; saveMessage = "Gagal mengunggah gambar: ${it.message}" }
+                .addOnFailureListener {
+                    isSaving = false
+                    saveMessage = "Gagal mengunggah gambar: ${it.message}"
+                }
         } else {
-            saveToDb(uid, uName, title, description, existingImageUrl ?: "", existingRecipeId)
+            saveToDb(uid, userName, title, description, existingImageUrl ?: "", existingRecipeId)
         }
     }
 
-    private fun saveToDb(authorId: String, authorName: String, title: String, description: String, imageUrl: String, existingId: String?) {
+    private fun saveToDb(
+        authorId: String,
+        authorName: String,
+        title: String,
+        description: String,
+        imageUrl: String,
+        existingId: String?
+    ) {
         val recipe = Recipe(authorId, authorName, title, description, imageUrl, System.currentTimeMillis())
         val ref = if (existingId != null) recipesRef.child(existingId) else recipesRef.push()
         ref.setValue(recipe)
-            .addOnSuccessListener { isSaving = false; saveMessage = "Resep berhasil disimpan!" }
-            .addOnFailureListener { isSaving = false; saveMessage = "Gagal menyimpan resep: ${it.message}" }
+            .addOnSuccessListener {
+                isSaving = false
+                saveMessage = "Resep berhasil disimpan!"
+            }
+            .addOnFailureListener {
+                isSaving = false
+                saveMessage = "Gagal menyimpan resep: ${it.message}"
+            }
     }
 
     fun deleteRecipe(recipeId: String, imageUrl: String) {
         isSaving = true
         recipesRef.child(recipeId).removeValue()
-            .addOnSuccessListener { isSaving = false; saveMessage = "Resep berhasil dihapus"; if (imageUrl.isNotEmpty()) deleteImage(imageUrl) }
-            .addOnFailureListener { isSaving = false; saveMessage = "Gagal menghapus resep" }
+            .addOnSuccessListener {
+                isSaving = false
+                saveMessage = "Resep berhasil dihapus"
+                if (imageUrl.isNotEmpty()) deleteImage(imageUrl)
+            }
+            .addOnFailureListener {
+                isSaving = false
+                saveMessage = "Gagal menghapus resep"
+            }
     }
 
     private fun deleteImage(url: String) {
-        try { FirebaseStorage.getInstance().getReferenceFromUrl(url).delete() } catch (_: Exception) {}
+        try {
+            FirebaseStorage.getInstance().getReferenceFromUrl(url).delete()
+        } catch (_: Exception) {}
     }
 
     fun resetMessage() { saveMessage = null }

@@ -5,98 +5,105 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 import com.kelompoksatu.kafecraft.data.SessionManager
 import com.kelompoksatu.kafecraft.data.User
 
 class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
 
+    private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseDatabase.getInstance().getReference("users")
 
     var isLoading by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
     var isSuccess by mutableStateOf(false)
-    var forgotEmail by mutableStateOf("")
 
-    fun resetState() { isLoading = false; error = null; isSuccess = false }
+    fun resetState() {
+        isLoading = false
+        error = null
+        isSuccess = false
+    }
 
     fun login(email: String, pass: String) {
         isLoading = true
-        db.orderByChild("email").equalTo(email).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                isLoading = false
-                if (!snapshot.exists()) { error = "Email tidak terdaftar"; return }
-                for (snap in snapshot.children) {
-                    val user = snap.getValue(User::class.java) ?: continue
-                    if (user.failedLoginAttempts >= 3) { error = "Akun diblokir karena terlalu banyak percobaan gagal."; return }
-                    if (user.password == pass) {
-                        if (user.failedLoginAttempts > 0) snap.ref.child("failedLoginAttempts").setValue(0)
-                        sessionManager.saveLoginSession(snap.key ?: "", user.name, user.email)
+        auth.signInWithEmailAndPassword(email, pass)
+            .addOnSuccessListener { result ->
+                val uid = result.user?.uid
+                if (uid == null) {
+                    isLoading = false
+                    error = "Login gagal"
+                    return@addOnSuccessListener
+                }
+                db.child(uid).get()
+                    .addOnSuccessListener { snap ->
+                        val user = snap.getValue(User::class.java)
+                        sessionManager.saveLoginSession(uid, user?.name ?: "", user?.email ?: email)
+                        isLoading = false
                         isSuccess = true
-                    } else {
-                        val attempts = user.failedLoginAttempts + 1
-                        snap.ref.child("failedLoginAttempts").setValue(attempts)
-                        error = if (attempts >= 3) "Akun diblokir." else "Password salah. Sisa: ${3 - attempts}"
                     }
-                    return
-                }
+                    .addOnFailureListener {
+                        isLoading = false
+                        error = it.message
+                    }
             }
-            override fun onCancelled(e: DatabaseError) { isLoading = false; error = e.message }
-        })
+            .addOnFailureListener {
+                isLoading = false
+                error = it.message
+            }
     }
 
-    fun register(name: String, email: String, pass: String, hint: String) {
+    fun register(name: String, email: String, pass: String) {
         isLoading = true
-        db.orderByChild("email").equalTo(email).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                isLoading = false
-                if (snapshot.exists()) { error = "Email sudah terdaftar"; return }
-                val key = db.push().key ?: run { error = "Gagal mendapat ID Firebase"; return }
-                db.child(key).setValue(User(name, email, pass, hint, 0))
-                    .addOnSuccessListener { isSuccess = true }
-                    .addOnFailureListener { error = it.message ?: "Gagal registrasi" }
+        auth.createUserWithEmailAndPassword(email, pass)
+            .addOnSuccessListener { result ->
+                val uid = result.user?.uid
+                if (uid == null) {
+                    isLoading = false
+                    error = "Gagal mendapat ID"
+                    return@addOnSuccessListener
+                }
+                db.child(uid).setValue(User(name, email))
+                    .addOnSuccessListener {
+                        isLoading = false
+                        isSuccess = true
+                    }
+                    .addOnFailureListener {
+                        isLoading = false
+                        error = it.message ?: "Gagal simpan data"
+                    }
             }
-            override fun onCancelled(e: DatabaseError) { isLoading = false; error = e.message }
-        })
+            .addOnFailureListener {
+                isLoading = false
+                error = it.message
+            }
     }
 
-    fun verifyForgotHint(email: String, hint: String) {
+    fun sendPasswordReset(email: String) {
         isLoading = true
-        db.orderByChild("email").equalTo(email).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+        auth.sendPasswordResetEmail(email)
+            .addOnSuccessListener {
                 isLoading = false
-                if (!snapshot.exists()) { error = "Email tidak terdaftar"; return }
-                for (snap in snapshot.children) {
-                    val user = snap.getValue(User::class.java) ?: continue
-                    if (user.hint == hint) { forgotEmail = email; isSuccess = true }
-                    else error = "Hint salah"
-                    return
-                }
+                isSuccess = true
             }
-            override fun onCancelled(e: DatabaseError) { isLoading = false; error = e.message }
-        })
+            .addOnFailureListener {
+                isLoading = false
+                error = it.message
+            }
     }
 
     fun changePassword(newPass: String) {
         isLoading = true
-        if (forgotEmail.isEmpty()) { error = "Sesi tidak valid"; isLoading = false; return }
-        db.orderByChild("email").equalTo(forgotEmail).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+        auth.currentUser
+            ?.updatePassword(newPass)
+            ?.addOnSuccessListener {
                 isLoading = false
-                if (!snapshot.exists()) { error = "User tidak ditemukan"; return }
-                for (snap in snapshot.children) {
-                    snap.ref.child("password").setValue(newPass)
-                    snap.ref.child("failedLoginAttempts").setValue(0)
-                        .addOnSuccessListener { isSuccess = true; forgotEmail = "" }
-                        .addOnFailureListener { error = "Gagal menyimpan password baru" }
-                    return
-                }
+                isSuccess = true
             }
-            override fun onCancelled(e: DatabaseError) { isLoading = false; error = e.message }
-        })
+            ?.addOnFailureListener {
+                isLoading = false
+                error = it.message ?: "Gagal ganti password"
+            }
     }
 
     class Factory(private val sessionManager: SessionManager) : ViewModelProvider.Factory {

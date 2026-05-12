@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.google.firebase.auth.FirebaseAuth
 import com.kelompoksatu.kafecraft.data.AppDatabase
 import com.kelompoksatu.kafecraft.data.SessionManager
 import com.kelompoksatu.kafecraft.ui.auth.*
@@ -27,7 +28,9 @@ fun AppNavigation(sessionManager: SessionManager) {
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory(bookmarkDao, sessionManager))
     val myRecipesViewModel: MyRecipesViewModel = viewModel(factory = MyRecipesViewModel.Factory(sessionManager))
 
-    NavHost(navController, startDestination = if (sessionManager.isLoggedIn()) "home" else "login") {
+    val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
+
+    NavHost(navController, startDestination = if (isLoggedIn) "home" else "login") {
         composable("login") {
             LoginScreen(authViewModel,
                 onNavigateToRegister = { navController.navigate("register") },
@@ -36,16 +39,13 @@ fun AppNavigation(sessionManager: SessionManager) {
         }
         composable("register") { RegisterScreen(authViewModel) { navController.popBackStack() } }
         composable("forgot_password") {
-            ForgotPasswordScreen(authViewModel,
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToChangePassword = { navController.navigate("change_password") { popUpTo("forgot_password") { inclusive = true } } })
-        }
-        composable("change_password") {
-            ChangePasswordScreen(authViewModel) { navController.navigate("login") { popUpTo(0) } }
+            ForgotPasswordScreen(authViewModel, onNavigateBack = { navController.popBackStack() })
         }
         composable("home") {
             MainScreen(sessionManager, homeViewModel, myRecipesViewModel, navController) {
-                sessionManager.logout(); navController.navigate("login") { popUpTo(0) }
+                FirebaseAuth.getInstance().signOut()
+                sessionManager.logout()
+                navController.navigate("login") { popUpTo(0) }
             }
         }
         composable("recipe_detail/{recipeId}", arguments = listOf(navArgument("recipeId") { type = NavType.StringType })) {

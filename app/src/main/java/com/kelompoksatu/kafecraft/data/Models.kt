@@ -2,10 +2,7 @@ package com.kelompoksatu.kafecraft.data
 
 data class User(
     val name: String = "",
-    val email: String = "",
-    val password: String = "",
-    val hint: String = "",
-    val failedLoginAttempts: Int = 0
+    val email: String = ""
 )
 
 data class Recipe(
