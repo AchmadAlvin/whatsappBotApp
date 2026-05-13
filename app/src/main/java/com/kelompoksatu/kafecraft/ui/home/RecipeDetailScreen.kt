@@ -22,7 +22,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.kelompoksatu.kafecraft.data.Comment
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,13 +86,11 @@ fun RecipeDetailScreen(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             item {
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    if (recipe.imageUrl.isNotEmpty()) {
-                        AsyncImage(
-                            model = recipe.imageUrl,
-                            contentDescription = recipe.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxWidth().height(300.dp)
-                        )
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(100.dp).background(Color(0xFFFF7A45)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(recipe.title, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                     Box(
                         modifier = Modifier.padding(16.dp).size(40.dp)

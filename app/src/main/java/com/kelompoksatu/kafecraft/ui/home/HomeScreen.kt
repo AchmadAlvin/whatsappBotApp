@@ -18,7 +18,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel, onNavigateToDetail: (String) -> Unit) {
@@ -41,17 +40,6 @@ fun RecipeCard(recipeWithId: RecipeWithId, onClick: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
         Column {
-            if (r.imageUrl.isNotEmpty()) {
-                AsyncImage(
-                    model = r.imageUrl,
-                    contentDescription = r.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                )
-            }
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(r.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
                 Text("by ${r.authorName}", fontSize = 12.sp, color = Color.Gray)

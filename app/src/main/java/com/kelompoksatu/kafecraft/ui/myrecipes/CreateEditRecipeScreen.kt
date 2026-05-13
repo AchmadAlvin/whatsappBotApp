@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 
 /**
  * Stateful wrapper for CreateEditRecipeScreen.
@@ -45,12 +44,7 @@ fun CreateEditRecipeScreen(
 
     var title by remember { mutableStateOf(existingRecipe?.recipe?.title ?: "") }
     var description by remember { mutableStateOf(existingRecipe?.recipe?.description ?: "") }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
-        selectedImageUri = it
-    }
 
     LaunchedEffect(viewModel.saveMessage) {
         viewModel.saveMessage?.let {
@@ -66,19 +60,15 @@ fun CreateEditRecipeScreen(
         onTitleChange = { title = it },
         description = description,
         onDescriptionChange = { description = it },
-        selectedImageUri = selectedImageUri,
-        existingImageUrl = existingRecipe?.recipe?.imageUrl,
         isSaving = viewModel.isSaving,
-        onImageClick = { imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
         onDeleteClick = { showDeleteDialog = true },
         onSaveClick = {
             if (title.isBlank() || description.isBlank()) {
                 Toast.makeText(context, "Harap isi nama dan deskripsi resep", Toast.LENGTH_SHORT).show()
             } else {
                 viewModel.saveRecipe(
-                    selectedImageUri, title, description,
-                    if (isEditMode) recipeId else null,
-                    existingRecipe?.recipe?.imageUrl
+                    title, description,
+                    if (isEditMode) recipeId else null
                 )
             }
         },
@@ -93,7 +83,7 @@ fun CreateEditRecipeScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.deleteRecipe(recipeId, existingRecipe.recipe.imageUrl)
+                        viewModel.deleteRecipe(recipeId)
                         showDeleteDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
@@ -123,10 +113,7 @@ fun CreateEditRecipeContent(
     onTitleChange: (String) -> Unit,
     description: String,
     onDescriptionChange: (String) -> Unit,
-    selectedImageUri: Uri?,
-    existingImageUrl: String?,
     isSaving: Boolean,
-    onImageClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onSaveClick: () -> Unit,
     onCancelClick: () -> Unit
@@ -160,30 +147,6 @@ fun CreateEditRecipeContent(
                 )
             } else {
                 Spacer(Modifier.size(24.dp))
-            }
-        }
-        Spacer(Modifier.height(24.dp))
-        Box(
-            modifier = Modifier.fillMaxWidth().height(200.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFEFEBE9))
-                .clickable { onImageClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            when {
-                selectedImageUri != null -> {
-                    AsyncImage(model = selectedImageUri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                }
-                isEditMode && existingImageUrl?.isNotEmpty() == true -> {
-                    AsyncImage(model = existingImageUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                }
-                else -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Outlined.Upload, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color(0xFF8D6E63))
-                        Spacer(Modifier.height(8.dp))
-                        Text("Ubah Foto Resep", color = Color(0xFF8D6E63))
-                    }
-                }
             }
         }
         Spacer(Modifier.height(24.dp))
@@ -246,10 +209,7 @@ fun CreateEditRecipeContentPreview() {
             onTitleChange = {},
             description = "Nasi goreng ayam",
             onDescriptionChange = {},
-            selectedImageUri = null,
-            existingImageUrl = null,
             isSaving = false,
-            onImageClick = {},
             onDeleteClick = {},
             onSaveClick = {},
             onCancelClick = {}

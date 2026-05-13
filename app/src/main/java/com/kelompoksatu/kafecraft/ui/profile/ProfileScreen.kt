@@ -1,8 +1,5 @@
 package com.kelompoksatu.kafecraft.ui.profile
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,10 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage
 import com.kelompoksatu.kafecraft.data.BookmarkEntity
 import com.kelompoksatu.kafecraft.data.SessionManager
 import com.kelompoksatu.kafecraft.ui.home.HomeViewModel
@@ -50,44 +44,11 @@ fun ProfileScreen(
     val userHandle = "@${userName.lowercase().replace(" ", "")}"
     val uid = FirebaseAuth.getInstance().currentUser?.uid
 
-    var photoUrl by remember { mutableStateOf<String?>(null) }
-    var isUploadingPhoto by remember { mutableStateOf(false) }
-
-    // Fetch user profile photo URL
-    LaunchedEffect(uid) {
-        if (uid != null) {
-            FirebaseDatabase.getInstance().getReference("users").child(uid).child("photoUrl").get()
-                .addOnSuccessListener { snap ->
-                    photoUrl = snap.getValue(String::class.java)
-                }
-        }
-    }
-
-    // Handle photo picking and uploading
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null && uid != null) {
-            isUploadingPhoto = true
-            val ref = FirebaseStorage.getInstance().reference.child("profile_images/${uid}.jpg")
-            ref.putFile(uri)
-                .addOnSuccessListener {
-                    ref.downloadUrl.addOnSuccessListener { url ->
-                        photoUrl = url.toString()
-                        FirebaseDatabase.getInstance().getReference("users").child(uid).child("photoUrl").setValue(url.toString())
-                        isUploadingPhoto = false
-                    }
-                }
-                .addOnFailureListener { isUploadingPhoto = false }
-        }
-    }
-
     ProfileContent(
         userName = userName,
         userHandle = userHandle,
-        photoUrl = photoUrl,
-        isUploadingPhoto = isUploadingPhoto,
         postCount = myRecipesViewModel.myRecipes.size,
         bookmarks = bookmarks,
-        onPhotoChangeClick = { imagePicker.launch("image/*") },
         onLogoutClick = onLogout,
         onNavigateToDetail = onNavigateToDetail
     )
@@ -101,11 +62,8 @@ fun ProfileScreen(
 fun ProfileContent(
     userName: String,
     userHandle: String,
-    photoUrl: String?,
-    isUploadingPhoto: Boolean,
     postCount: Int,
     bookmarks: List<BookmarkEntity>,
-    onPhotoChangeClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onNavigateToDetail: (String) -> Unit
 ) {
@@ -132,36 +90,15 @@ fun ProfileContent(
         ) {
             Box(contentAlignment = Alignment.BottomEnd) {
                 Box(
-                    modifier = Modifier.size(100.dp).clip(CircleShape).clickable { onPhotoChangeClick() },
+                    modifier = Modifier.size(100.dp).clip(CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (photoUrl != null) {
-                        AsyncImage(
-                            model = photoUrl,
-                            contentDescription = "Foto Profil",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize().clip(CircleShape)
-                        )
-                    } else {
-                        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE0D5CB)), contentAlignment = Alignment.Center) {
-                            Text(userName.take(1).uppercase(), fontSize = 36.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF7A45))
-                        }
+                    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE0D5CB)), contentAlignment = Alignment.Center) {
+                        Text(userName.take(1).uppercase(), fontSize = 36.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF7A45))
                     }
                 }
-                Box(
-                    modifier = Modifier.size(28.dp).clip(CircleShape).background(Color(0xFFFF7A45)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("✏️", fontSize = 12.sp)
-                }
             }
-            if (isUploadingPhoto) {
-                Spacer(Modifier.height(8.dp))
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color(0xFFFF7A45), strokeWidth = 2.dp)
-            }
-            Spacer(Modifier.height(8.dp))
-            Text("Ganti Foto", fontSize = 12.sp, color = Color(0xFFFF7A45), modifier = Modifier.clickable { onPhotoChangeClick() })
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
             Text(userName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
             Spacer(Modifier.height(4.dp))
             Text(userHandle, fontSize = 14.sp, color = Color(0xFFFF7A45))
@@ -236,11 +173,8 @@ fun ProfileContentPreview() {
         ProfileContent(
             userName = "Budi Santoso",
             userHandle = "@budisantoso",
-            photoUrl = null,
-            isUploadingPhoto = false,
             postCount = 5,
             bookmarks = dummyBookmarks,
-            onPhotoChangeClick = {},
             onLogoutClick = {},
             onNavigateToDetail = {}
         )

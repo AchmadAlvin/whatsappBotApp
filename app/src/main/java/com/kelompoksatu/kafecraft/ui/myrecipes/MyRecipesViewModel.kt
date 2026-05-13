@@ -10,7 +10,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.storage.FirebaseStorage
 import com.kelompoksatu.kafecraft.data.Recipe
 import com.kelompoksatu.kafecraft.data.SessionManager
 import com.kelompoksatu.kafecraft.ui.home.RecipeWithId
@@ -19,7 +18,6 @@ import java.util.UUID
 class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel() {
 
     private val recipesRef = FirebaseDatabase.getInstance().getReference("recipes")
-    private val storageRef = FirebaseStorage.getInstance().reference
     private var recipesListener: ValueEventListener? = null
     private var lastQueryUid: String? = null
 
@@ -66,11 +64,9 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
     }
 
     fun saveRecipe(
-        uri: Uri?,
         title: String,
         description: String,
-        existingRecipeId: String? = null,
-        existingImageUrl: String? = null
+        existingRecipeId: String? = null
     ) {
         val uid = sessionManager.getUserId()
         val userName = sessionManager.getUserName()
@@ -79,29 +75,7 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
             return
         }
         isSaving = true
-        if (uri != null) {
-            val imageRef = storageRef.child("recipe_images/${UUID.randomUUID()}.jpg")
-            imageRef.putFile(uri)
-                .addOnSuccessListener {
-                    imageRef.downloadUrl
-                        .addOnSuccessListener { url ->
-                            saveToDb(uid, userName, title, description, url.toString(), existingRecipeId)
-                            if (!existingImageUrl.isNullOrEmpty() && existingRecipeId != null) {
-                                deleteImage(existingImageUrl)
-                            }
-                        }
-                        .addOnFailureListener {
-                            isSaving = false
-                            saveMessage = "Gagal mendapatkan URL gambar."
-                        }
-                }
-                .addOnFailureListener {
-                    isSaving = false
-                    saveMessage = "Gagal mengunggah gambar: ${it.message}"
-                }
-        } else {
-            saveToDb(uid, userName, title, description, existingImageUrl ?: "", existingRecipeId)
-        }
+        saveToDb(uid, userName, title, description, existingRecipeId)
     }
 
     private fun saveToDb(
@@ -109,10 +83,9 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
         authorName: String,
         title: String,
         description: String,
-        imageUrl: String,
         existingId: String?
     ) {
-        val recipe = Recipe(authorId, authorName, title, description, imageUrl, System.currentTimeMillis())
+        val recipe = Recipe(authorId, authorName, title, description, "", System.currentTimeMillis())
         val ref = if (existingId != null) recipesRef.child(existingId) else recipesRef.push()
         ref.setValue(recipe)
             .addOnSuccessListener {
@@ -125,24 +98,17 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
             }
     }
 
-    fun deleteRecipe(recipeId: String, imageUrl: String) {
+    fun deleteRecipe(recipeId: String) {
         isSaving = true
         recipesRef.child(recipeId).removeValue()
             .addOnSuccessListener {
                 isSaving = false
                 saveMessage = "Resep berhasil dihapus"
-                if (imageUrl.isNotEmpty()) deleteImage(imageUrl)
             }
             .addOnFailureListener {
                 isSaving = false
                 saveMessage = "Gagal menghapus resep"
             }
-    }
-
-    private fun deleteImage(url: String) {
-        try {
-            FirebaseStorage.getInstance().getReferenceFromUrl(url).delete()
-        } catch (_: Exception) {}
     }
 
     fun resetMessage() { saveMessage = null }
