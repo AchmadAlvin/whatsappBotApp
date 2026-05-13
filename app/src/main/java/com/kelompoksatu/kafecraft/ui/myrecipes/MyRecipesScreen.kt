@@ -22,7 +22,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.kelompoksatu.kafecraft.data.Recipe
 import com.kelompoksatu.kafecraft.ui.home.RecipeWithId
 
@@ -70,7 +69,7 @@ fun MyRecipesScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.deleteRecipe(recipeToDelete!!.id, recipeToDelete!!.recipe.imageUrl)
+                        viewModel.deleteRecipe(recipeToDelete!!.id)
                         showDeleteDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
@@ -163,17 +162,6 @@ fun MyRecipeCard(recipeWithId: RecipeWithId, onEdit: () -> Unit, onDelete: () ->
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column {
-            if (recipe.imageUrl.isNotEmpty()) {
-                AsyncImage(
-                    model = recipe.imageUrl,
-                    contentDescription = recipe.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                )
-            }
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(recipe.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
                 Spacer(Modifier.height(8.dp))

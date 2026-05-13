@@ -23,7 +23,11 @@ import com.kelompoksatu.kafecraft.ui.myrecipes.MyRecipesScreen
 import com.kelompoksatu.kafecraft.ui.myrecipes.MyRecipesViewModel
 import com.kelompoksatu.kafecraft.ui.profile.ProfileScreen
 
-data class BottomNavItem(val title: String, val route: String, val icon: ImageVector)
+data class BottomNavItem(
+    val title: String, 
+    val route: String, 
+    val icon: ImageVector
+    )
 
 @Composable
 fun MainScreen(
