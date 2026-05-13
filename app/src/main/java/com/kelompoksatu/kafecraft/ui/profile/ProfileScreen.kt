@@ -109,7 +109,7 @@ fun ProfileContent(
     onLogoutClick: () -> Unit,
     onNavigateToDetail: (String) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFFEF9F6))) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Top Bar
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -175,7 +175,7 @@ fun ProfileContent(
         // Bookmark Header
         Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
             HorizontalDivider(color = Color(0xFFF5E6E0))
-            Box(modifier = Modifier.background(Color(0xFFFEF9F6)).padding(horizontal = 16.dp)) {
+            Box(modifier = Modifier.background(MaterialTheme.colorScheme.background).padding(horizontal = 16.dp)) {
                 Text("My Bookmark", fontSize = 14.sp, color = Color(0xFFFF7A45), fontWeight = FontWeight.Medium)
             }
         }
