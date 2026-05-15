@@ -39,7 +39,6 @@ android {
 
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.13.0"))
-    implementation("com.google.firebase:firebase-analytics")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -64,13 +63,11 @@ dependencies {
     // Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.8.5")
     
-    // Coil (Image Loading)
-    implementation("io.coil-kt:coil-compose:2.7.0")
 
     // Firebase
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")
-    implementation("com.google.firebase:firebase-storage")
+
 
     // Room Database
     val room_version = "2.7.0-alpha11"
