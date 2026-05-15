@@ -40,7 +40,18 @@ fun RecipeDetailScreen(
     val isBookmarked = bookmarkList.any { it.recipeId == recipeId }
     val bookmarkedEntity = bookmarkList.find { it.recipeId == recipeId }
 
-    if (recipeWithId == null) {
+    val recipe = recipeWithId?.recipe ?: if (bookmarkedEntity != null) {
+        Recipe(
+            authorId = "",
+            authorName = bookmarkedEntity.authorName,
+            title = bookmarkedEntity.title,
+            description = bookmarkedEntity.description,
+            imageUrl = bookmarkedEntity.imageUrl,
+            timestamp = 0L
+        )
+    } else null
+
+    if (recipe == null) {
         Box(Modifier.fillMaxSize().background(Color(0xFFFEF9F6)), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Resep tidak ditemukan", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF332211))
@@ -66,8 +77,6 @@ fun RecipeDetailScreen(
         }
         return
     }
-
-    val recipe = recipeWithId.recipe
 
     Scaffold(
         bottomBar = {
