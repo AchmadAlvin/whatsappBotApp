@@ -46,7 +46,6 @@ fun RecipeDetailScreen(
             authorName = bookmarkedEntity.authorName,
             title = bookmarkedEntity.title,
             description = bookmarkedEntity.description,
-            imageUrl = bookmarkedEntity.imageUrl,
             timestamp = 0L
         )
     } else null

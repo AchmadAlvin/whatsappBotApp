@@ -22,8 +22,6 @@ data class Recipe(
     val title: String = "",
     // 9. 'description' untuk deskripsi resep.
     val description: String = "",
-    // 10. 'imageUrl' untuk menyimpan URI gambar resep.
-    val imageUrl: String = "",
     // 11. 'timestamp' bertipe primitif Long (64-bit integer) untuk menyimpan waktu UNIX (Epoch time).
     val timestamp: Long = 0L
 )

@@ -1,6 +1,6 @@
 package com.kelompoksatu.kafecraft.ui.myrecipes
 
-import android.net.Uri
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,7 +13,7 @@ import com.google.firebase.database.ValueEventListener
 import com.kelompoksatu.kafecraft.data.Recipe
 import com.kelompoksatu.kafecraft.data.SessionManager
 import com.kelompoksatu.kafecraft.ui.home.RecipeWithId
-import java.util.UUID
+
 
 class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel() {
 
@@ -85,7 +85,7 @@ class MyRecipesViewModel(private val sessionManager: SessionManager) : ViewModel
         description: String,
         existingId: String?
     ) {
-        val recipe = Recipe(authorId, authorName, title, description, "", System.currentTimeMillis())
+        val recipe = Recipe(authorId, authorName, title, description, System.currentTimeMillis())
         val ref = if (existingId != null) recipesRef.child(existingId) else recipesRef.push()
         ref.setValue(recipe)
             .addOnSuccessListener {

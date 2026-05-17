@@ -21,7 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
 import com.kelompoksatu.kafecraft.data.BookmarkEntity
 import com.kelompoksatu.kafecraft.data.SessionManager
 import com.kelompoksatu.kafecraft.ui.home.HomeViewModel
@@ -42,7 +41,6 @@ fun ProfileScreen(
     val bookmarks by homeViewModel.bookmarks.collectAsState()
     val userName = sessionManager.getUserName() ?: "User"
     val userHandle = "@${userName.lowercase().replace(" ", "")}"
-    val uid = FirebaseAuth.getInstance().currentUser?.uid
 
     ProfileContent(
         userName = userName,
@@ -166,8 +164,8 @@ fun ProfileContent(
 @Composable
 fun ProfileContentPreview() {
     val dummyBookmarks = listOf(
-        BookmarkEntity("1", "Nasi Goreng Spesial", "Enak banget", "", "Chef A"),
-        BookmarkEntity("2", "Ayam Bakar Madu", "Mantap", "", "Chef B")
+        BookmarkEntity("1", "Nasi Goreng Spesial", "Enak banget", "Chef A"),
+        BookmarkEntity("2", "Ayam Bakar Madu", "Mantap", "Chef B")
     )
     MaterialTheme {
         ProfileContent(

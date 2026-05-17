@@ -13,9 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -201,8 +199,8 @@ fun MyRecipeCard(recipeWithId: RecipeWithId, onEdit: () -> Unit, onDelete: () ->
 @Composable
 fun MyRecipesContentPreview() {
     val dummyRecipes = listOf(
-        RecipeWithId("1", Recipe("authorId", "Author Name", "Nasi Goreng", "Nasi goreng spesial pakai telur", "", 0L)),
-        RecipeWithId("2", Recipe("authorId", "Author Name", "Ayam Bakar", "Ayam bakar madu manis", "", 0L))
+        RecipeWithId("1", Recipe("authorId", "Author Name", "Nasi Goreng", "Nasi goreng spesial pakai telur", 0L)),
+        RecipeWithId("2", Recipe("authorId", "Author Name", "Ayam Bakar", "Ayam bakar madu manis", 0L))
     )
     MaterialTheme {
         MyRecipesContent(

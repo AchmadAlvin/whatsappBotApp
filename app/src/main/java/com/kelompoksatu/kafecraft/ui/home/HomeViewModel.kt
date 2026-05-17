@@ -71,7 +71,7 @@ class HomeViewModel(
 
     fun toggleBookmark(recipeId: String, recipe: Recipe) {
         viewModelScope.launch {
-            val entity = BookmarkEntity(recipeId, recipe.title, recipe.description, recipe.imageUrl, recipe.authorName)
+            val entity = BookmarkEntity(recipeId, recipe.title, recipe.description, recipe.authorName)
             val isAlreadyBookmarked = bookmarks.value.any { it.recipeId == recipeId }
             if (isAlreadyBookmarked) {
                 bookmarkDao.delete(entity)

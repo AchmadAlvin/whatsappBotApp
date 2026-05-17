@@ -17,8 +17,6 @@ data class BookmarkEntity(
     val title: String,
     // 23. Kolom 'description' bertipe teks.
     val description: String,
-    // 24. Kolom 'imageUrl' bertipe teks.
-    val imageUrl: String,
     // 25. Kolom 'authorName' bertipe teks.
     val authorName: String
 )
