@@ -41,7 +41,7 @@ abstract class AppDatabase : RoomDatabase() {
                 // 59. Menyimpan instance yang telah dibuat kembali ke dalam variabel static INSTANCE (Mutasi status).
                 INSTANCE = instance
 
-                // 60. 'instance' menjadi nilai pengembalian (Return value) dari blok lambda ini (Implicit Return pada Lambda Expression).
+                // 60. 'instance' menjadi nilai pengembalian (Return value) dari blok lambda ini (Implicit Return pada Lambda Expression)..
                 instance
             }
         }
