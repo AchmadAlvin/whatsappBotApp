@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kelompoksatu.kafecraft.data.Comment
+import com.kelompoksatu.kafecraft.data.Recipe
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
