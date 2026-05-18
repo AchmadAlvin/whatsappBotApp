@@ -20,15 +20,17 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
     // 96. Mendapatkan referensi node "users" dari Firebase Realtime Database.
     private val db = FirebaseDatabase.getInstance().getReference("users")
 
-    // 97. 'mutableStateOf' adalah fungsi spesifik Compose untuk membuat state yang "diamati" (Observable State). 'by' adalah Property Delegate di Kotlin.
-    // Istilah FP: Reactive State. Ketika nilai ini berubah, Compose akan melakukan "Recomposition" (merender ulang UI) secara otomatis tanpa modifikasi manual (Declarative UI).
-    var isLoading by mutableStateOf(false)
-    // 98. State 'error' bertipe String Nullable ('String?') untuk menampung pesan gagal.
+    // 97. Tiga state bersama yang dipakai oleh SEMUA fungsi auth (login, register, reset password, ganti password).
+    // 'mutableStateOf' membuat state yang "diamati" (Observable State) oleh Compose. 'by' adalah Property Delegate Kotlin.
+    // Istilah FP: Reactive State. Ketika salah satu nilai berubah, Compose otomatis melakukan Recomposition (render ulang UI) tanpa modifikasi manual.
+    var isLoading by mutableStateOf(false)   // true = operasi sedang berjalan (tampilkan spinner)
+    // 98. State 'error' bertipe String Nullable ('String?'). Null = tidak ada error, non-null = pesan error yang akan ditampilkan ke user.
     var error by mutableStateOf<String?>(null)
-    // 99. State 'isSuccess' untuk menandai operasi berhasil.
+    // 99. State 'isSuccess' menandai operasi selesai sukses. Digunakan UI sebagai trigger navigasi pindah layar.
     var isSuccess by mutableStateOf(false)
 
-    // 100. Fungsi 'resetState()' untuk mengembalikan state ke nilai default (Pure behavior reset).
+    // 100. Fungsi 'resetState()' untuk mengembalikan ketiga state di atas ke nilai awal.
+    // Dipanggil dari UI setelah navigasi atau setelah Toast error muncul, agar state tidak "bocor" ke operasi berikutnya (mencegah Infinite Loop recomposition).
     fun resetState() {
         isLoading = false
         error = null
@@ -72,10 +74,11 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                         error = it.message
                     }
             }
-            // 114. HOF Callback Penanganan Error tingkat Firebase Auth (Misal: Password salah, email tidak terdaftar).
+            // 114. HOF Callback Penanganan Error tingkat Firebase Auth (misal: password salah, email tidak terdaftar, tidak ada koneksi).
+            // Pola sama dengan failure listener Database di L113. 'it' adalah objek Exception yang mengandung pesan error dari server Firebase.
             .addOnFailureListener {
                 isLoading = false
-                error = it.message
+                error = it.message  // string error ini akan dibaca LaunchedEffect di UI untuk ditampilkan sebagai Toast
             }
     }
 

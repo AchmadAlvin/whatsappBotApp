@@ -1,7 +1,10 @@
 // 123. [LoginScreen.kt] Deklarasi package untuk file tampilan UI.
 package com.kelompoksatu.kafecraft.ui.auth
 
-// 124-142. Mengimpor berbagai antarmuka Jetpack Compose. Compose adalah framework UI yang sepenuhnya menggunakan pendekatan 'Declarative Programming' (Pendekatan fungsional dalam membangun UI tanpa modifikasi state imperatif langsung).
+// 124-142. Mengimpor library yang dibutuhkan:
+// - android.widget.Toast: untuk menampilkan pesan singkat ke user
+// - androidx.compose.*: komponen UI, layout, modifier, tema Material3, dan state management Compose
+// - androidx.compose.ui.platform.LocalContext: untuk mengakses Context Android di dalam fungsi Composable
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -34,8 +37,9 @@ fun LoginScreen(
     // 145. Mengambil objek Context Android murni (Application Environment) di dalam semesta fungsional Compose.
     val context = LocalContext.current
 
-    // 146. 'LaunchedEffect' adalah titik potong Coroutine di dalam Compose yang terikat dengan siklus hidup UI (Lifecycle-aware).
-    // Istilah Teknis: Side-Effect Handler. Fungsi UI (Composable) harus pure (tanpa efek samping seperti menembak Toast atau navigasi). 'LaunchedEffect' adalah satu-satunya blok legal untuk menembakkan efek samping secara aman berdasarkan deteksi perubahan state (keys: isSuccess, error).
+    // 146. 'LaunchedEffect' adalah Side-Effect Handler di Compose yang menjalankan blok Coroutine.
+    // Fungsi Composable harus bebas efek samping (navigasi, Toast). 'LaunchedEffect' adalah satu-satunya blok legal untuk menembakkan efek samping secara aman.
+    // Menerima dua keys: 'isSuccess' dan 'error'. Blok ini diulang SETIAP KALI salah satu dari kedua key tersebut berubah nilainya.
     LaunchedEffect(viewModel.isSuccess, viewModel.error) {
         // 147. Jika state ViewModel 'isSuccess' diubah menjadi true (oleh fungsi Firebase login di ViewModel)...
         if (viewModel.isSuccess) {
@@ -72,10 +76,12 @@ private fun LoginScreenContent(
     onNavigateToRegister: () -> Unit = {},
     onNavigateToForgot: () -> Unit = {}
 ) {
-    // 155. 'remember { mutableStateOf("") }' adalah deklarasi state lokal.
-    // Istilah Teknis: Memoization. 'remember' akan mem-buffer nilai string ini agar bertahan di dalam memori grafik, tidak me-reset jadi string kosong saat UI secara konstan memanggil ulang (Recomposition) fungsi Composable ini ketika animasi berjalan atau teks baru sedang diketik user.
+    // 155. 'remember { mutableStateOf("") }' adalah deklarasi state lokal yang bertahan saat Recomposition.
+    // Tanpa 'remember', setiap Recomposition (terjadi saat user mengetik) akan me-reset variabel ke string kosong, menghapus input yang sudah diketik.
+    // 'remember' memastikan nilai state bertahan selama Composable ini aktif di layar.
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    // 155b. 'LocalContext.current' mengambil Context Android dari CompositionLocal tree. Dibutuhkan untuk Toast di blok validasi tombol di bawah.
     val context = LocalContext.current
 
     // 156. Elemen struktural 'Column', memposisikan komponen berderet ke bawah dengan modifikasi mengisi penuh layar (fillMaxSize).
